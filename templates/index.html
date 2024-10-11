@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Upload and Description</title>
+</head>
+<body>
+    <h1>Upload an Image</h1>
+
+    <form method="POST" enctype="multipart/form-data">
+        <input type="file" name="file" required>
+        <button type="submit">Upload</button>
+    </form>
+
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <ul>
+          {% for message in messages %}
+            <li>{{ message }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    {% endwith %}
+
+    {% if image_url %}
+        <h2>Uploaded Image:</h2>
+        <img src="{{ image_url }}" alt="Uploaded Image" style="max-width: 400px;">
+        <h2>Description:</h2>
+        <p>{{ description }}</p>
+    {% endif %}
+
+    <form action="/clear" method="POST" style="margin-top: 20px;">
+        <button type="submit">Clear Bucket</button>
+    </form>
+</body>
+</html>
