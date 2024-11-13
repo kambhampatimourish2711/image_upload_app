@@ -4,7 +4,7 @@ steps:
     args: ['build', '-t', 'gcr.io/cotproject1-436018/image-upload-app', '.']
 
   # Step 2: Run automated tests using pytest
-  - name: 'python'
+  - name: 'python:3.8-slim'  # Use a lightweight Python image
     entrypoint: 'bash'
     args:
       - '-c'
