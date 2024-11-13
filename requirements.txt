@@ -19,3 +19,6 @@ llama-index-llms-gemini
 
 # Testing
 pytest==7.2.2
+
+# Additional dependencies for tests and application
+langchain_community
