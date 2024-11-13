@@ -11,7 +11,7 @@ steps:
       - |
         pip install --upgrade pip
         pip install -r requirements.txt
-        pytest -v /home/kambhampatimourish2711/image-upload-app/test_app.py  # Run test_app.py from specified path
+        pytest -v  test_app.py  # Run test_app.py from specified path
 
   # Step 3: Push the Docker image to Google Artifact Registry
   - name: 'gcr.io/cloud-builders/docker'
