@@ -5,13 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Image Upload and Description</title>
     <style>
-      body {
-          background-color: green;
-          color: white;
-      }
-  </style>
-  
-
+        body {
+            background-color: green;
+            color: white;
+        }
+    </style>
 </head>
 <body>
     <h1>Upload an Image</h1>
@@ -36,6 +34,19 @@
         <img src="{{ image_url }}" alt="Uploaded Image" style="max-width: 400px;">
         <h2>Description:</h2>
         <p>{{ description }}</p>
+    {% endif %}
+
+    <h2>Your Previously Uploaded Files</h2>
+    {% if uploaded_files %}
+        <ul>
+            {% for file in uploaded_files %}
+                <li>
+                    <a href="{{ file.url }}" target="_blank">{{ file.name }}</a>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>You have not uploaded any files yet.</p>
     {% endif %}
 
     <form action="/clear" method="POST" style="margin-top: 20px;">
