@@ -1,4 +1,5 @@
 from main import app
+from io import BytesIO  # Add this import for BytesIO usage
 
 def test_home_page():
     client = app.test_client()
