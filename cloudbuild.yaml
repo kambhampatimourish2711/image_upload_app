@@ -3,13 +3,13 @@ steps:
   - name: 'gcr.io/cloud-builders/docker'
     args: ['build', '-t', 'gcr.io/cotproject1-436018/image-upload-app', '.']
 
-  # Step 2: Install dependencies and run tests
+  # Step 2: Install dependencies and run tests with PYTHONPATH set
   - name: 'python:3.10-slim'
     entrypoint: 'bash'
     args:
       - '-c'
       - |
-        export PYTHONPATH=$PYTHONPATH:/workspace && \
+        export PYTHONPATH=/workspace && \
         pip install --upgrade pip && \
         pip install -r requirements.txt && \
         pytest tests/
