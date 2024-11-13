@@ -3,11 +3,20 @@ steps:
   - name: 'gcr.io/cloud-builders/docker'
     args: ['build', '-t', 'gcr.io/cotproject1-436018/image-upload-app', '.']
 
-  # Step 2: Push the Docker image to Google Artifact Registry
+  # Step 2: Run automated tests using pytest
+  - name: 'python'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        pip install -r requirements.txt
+        pytest tests/  # Run tests from the tests directory
+
+  # Step 3: Push the Docker image to Google Artifact Registry
   - name: 'gcr.io/cloud-builders/docker'
     args: ['push', 'gcr.io/cotproject1-436018/image-upload-app']
 
-  # Step 3: Deploy to Cloud Run
+  # Step 4: Deploy to Cloud Run
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: 'gcloud'
     args:

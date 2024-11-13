@@ -1,9 +1,10 @@
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for, flash, session
 from google.cloud import storage
 import os
 import requests
 from io import BytesIO
 from PIL import Image
+from datetime import timedelta
 from llama_index.multi_modal_llms.gemini import GeminiMultiModal
 from llama_index.core.multi_modal_llms.generic_utils import load_image_urls
 
@@ -46,7 +47,18 @@ def save_description_to_bucket(file_name, description):
 def index():
     image_url = None
     description = None
+    uploaded_files = []
+
+    # Retrieve the list of previously uploaded files
+    blobs = bucket.list_blobs()
+    for blob in blobs:
+        uploaded_files.append({
+            "name": blob.name,
+            "url": blob.public_url
+        })
+
     if request.method == "POST":
+        # Handle file upload
         if 'file' not in request.files:
             flash("No file part")
             return redirect(request.url)
@@ -58,7 +70,7 @@ def index():
             # Upload file to Google Cloud Storage
             blob = bucket.blob(file.filename)
             blob.upload_from_file(file)
-            blob.make_public()
+            blob.make_public()  # Make the file public (optional)
             image_url = blob.public_url
 
             # Generate image description using Gemini API
@@ -69,7 +81,7 @@ def index():
             else:
                 flash("Error generating description.")
 
-    return render_template("index.html", image_url=image_url, description=description)
+    return render_template("index.html", image_url=image_url, description=description, uploaded_files=uploaded_files)
 
 @app.route("/clear", methods=["POST"])
 def clear_bucket():
