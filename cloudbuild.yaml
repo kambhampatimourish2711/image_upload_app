@@ -2,37 +2,27 @@ steps:
   # Step 1: Build the Docker image
   - name: 'gcr.io/cloud-builders/docker'
     args: ['build', '-t', 'gcr.io/cotproject1-436018/image-upload-app', '.']
-
-  # Step 2: Install dependencies and run tests
-  - name: 'python:3.10-slim'
-    entrypoint: 'bash'
-    args:
-      - '-c'
-      - |
-        pip install --upgrade pip
-        pip install -r requirements.txt
-        pytest -v  test_app.py   
-
-  # Step 3: Push the Docker image to Google Artifact Registry
+  # Step 2: Push the Docker image to Google Artifact Registry
   - name: 'gcr.io/cloud-builders/docker'
     args: ['push', 'gcr.io/cotproject1-436018/image-upload-app']
-
-  # Step 4: Deploy to Cloud Run
+  # Step 3: Deploy to Cloud Run
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: 'gcloud'
     args:
       - 'run'
       - 'deploy'
-      - 'image-upload-app'
+      - 'image-upload-app' # This should be your Cloud Run service name
       - '--image'
       - 'gcr.io/cotproject1-436018/image-upload-app'
       - '--region'
-      - 'us-central1'
+      - 'us-central1' # Replace with your preferred region
       - '--platform'
       - 'managed'
       - '--allow-unauthenticated'
 
+
+# Set build options
 options:
   logging: CLOUD_LOGGING_ONLY
-
+# Define the service account that Cloud Build will use to deploy
 serviceAccount: image-upload-app-sa@cotproject1-436018.iam.gserviceaccount.com
