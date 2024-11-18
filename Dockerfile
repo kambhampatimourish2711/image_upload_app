@@ -1,17 +1,25 @@
- FROM python:3.9-slim
+# Use a lightweight Python image
+FROM python:3.9-slim
 
- ENV PYTHONDONTWRITEBYTECODE 1
+# Environment settings to ensure clean execution
+ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 
- WORKDIR /app
+# Set working directory
+WORKDIR /app
 
- COPY requirements.txt /app/
+# Copy requirements file and install dependencies
+COPY requirements.txt /app/
 
- RUN pip install --upgrade pip
-RUN pip install -r requirements.txt
+# Upgrade pip and install dependencies
+RUN pip install --upgrade pip && \
+    pip install -r requirements.txt
 
- COPY . /app/
+# Copy application code to the container
+COPY . /app/
 
- EXPOSE 8080
+# Expose the default port for the application
+EXPOSE 8080
 
- CMD ["gunicorn", "--bind", "0.0.0.0:8080", "main:app"]
+# Optimized Gunicorn command with fewer workers and threads
+CMD ["gunicorn", "--bind", "0.0.0.0:8080", "--workers", "1", "--threads", "2", "--timeout", "120", "main:app"]
