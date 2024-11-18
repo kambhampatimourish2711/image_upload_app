@@ -2,16 +2,18 @@ steps:
   # Step 1: Build the Docker image
   - name: 'gcr.io/cloud-builders/docker'
     args: ['build', '-t', 'gcr.io/cotproject1-436018/image-upload-app', '.']
+  
   # Step 2: Push the Docker image to Google Artifact Registry
   - name: 'gcr.io/cloud-builders/docker'
     args: ['push', 'gcr.io/cotproject1-436018/image-upload-app']
-  # Step 3: Deploy to Cloud Run
+  
+  # Step 3: Deploy to Google Cloud Run
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: 'gcloud'
     args:
       - 'run'
       - 'deploy'
-      - 'image-upload-app' # This should be your Cloud Run service name
+      - 'image-upload-app' # Replace with your Cloud Run service name
       - '--image'
       - 'gcr.io/cotproject1-436018/image-upload-app'
       - '--region'
@@ -19,10 +21,18 @@ steps:
       - '--platform'
       - 'managed'
       - '--allow-unauthenticated'
-
+      - '--set-env-vars'
+      - 'API_KEY=$(API_KEY)'
 
 # Set build options
 options:
   logging: CLOUD_LOGGING_ONLY
+
 # Define the service account that Cloud Build will use to deploy
 serviceAccount: image-upload-app-sa@cotproject1-436018.iam.gserviceaccount.com
+
+# Define substitutions for environment variables
+substitutions:
+  _API_KEY: 'AIzaSyCQcuwNvtCg5YIVUcAkp-ZcF8ozw7v71gY'
+
+timeout: 900s
