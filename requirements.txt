@@ -1,26 +1,21 @@
 # Flask web framework
-Flask==3.0.2
+Flask==2.1.3
+Flask-Login==0.5.0
+Werkzeug==2.0.3
 
-# Web server
+
+# Gunicorn for production-grade serving
 gunicorn==21.2.0
 
-# Google Cloud dependencies
+# Google Cloud Storage client library
 google-cloud-storage==2.9.0
-google-cloud-aiplatform==1.24.1  # Specify compatible version
 
-# Generative AI dependencies (remove version constraint to allow compatibility)
-google-generativeai
+# Google AI Platform and Gemini dependencies
+google-cloud-aiplatform
+google-generativeai>=0.3.0
 
-# Llama Index dependencies
-llama-index==0.6.0
+# LlamaIndex and multi-modal capabilities
+llama-index>=0.6.0
 llama-index-multi-modal-llms-gemini
 llama-index-embeddings-gemini
 llama-index-llms-gemini
-
-# Testing
-pytest==7.2.2
-
-# Additional dependencies for tests and application
-langchain
-langchain_community
-
