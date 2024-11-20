@@ -92,7 +92,7 @@ def upload_file():
             caption, description = generate_caption_and_description(local_file_path)
             if caption:
                 text_content = f"Caption: {caption}\nDescription: {description}"
-                text_blob = bucket.blob(f"{unique_filename}.txt")
+                text_blob = bucket.blob(f"{os.path.splitext(unique_filename)[0]}_description.txt")
                 text_blob.upload_from_string(text_content, content_type='text/plain')
                 print(f"Text file {unique_filename}.txt saved successfully with content:\n{text_content}")
             else:
@@ -111,13 +111,26 @@ def upload_file():
 
     for blob in blobs:
         if not blob.name.endswith('.txt'):
-            # Use signed URL for secure access
-            image_url = generate_signed_url(blob)
-            description_blob = bucket.blob(f"{blob.name}.txt")
-            description = description_blob.download_as_text() if description_blob.exists() else "No description available"
-            image_data_list.append({'image_url': image_url, 'description': description})
+            try:
+                # Generate a signed URL for the image
+                image_url = generate_signed_url(blob)
+
+                # Retrieve the description file
+                description_blob = bucket.blob(f"{os.path.splitext(blob.name)[0]}_description.txt")
+                if description_blob.exists():
+                    description = description_blob.download_as_text()
+                else:
+                    description = "No description available"
+
+                image_data_list.append({'image_url': image_url, 'description': description})
+            except Exception as e:
+                print(f"Error processing blob {blob.name}: {e}")
 
     return render_template('index.html', images=image_data_list, bucket_name=BUCKET_NAME)
 
 if __name__ == "__main__":
+    # Ensure GOOGLE_APPLICATION_CREDENTIALS is set in the environment
+    if 'GOOGLE_APPLICATION_CREDENTIALS' not in os.environ:
+        os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = "/home/kambhampatimourish2711/image-upload-app/cotproject1-436018-e8e29848fdad.json"
+    
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 8080)), debug=True)
