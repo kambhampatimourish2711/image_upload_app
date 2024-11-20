@@ -131,6 +131,6 @@ def upload_file():
 if __name__ == "__main__":
     # Ensure GOOGLE_APPLICATION_CREDENTIALS is set in the environment
     if 'GOOGLE_APPLICATION_CREDENTIALS' not in os.environ:
-        os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = "/home/kambhampatimourish2711/image-upload-app/cotproject1-436018-e8e29848fdad.json"
+        os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = "/home/kambhampatimourish2711/image-upload-app/cotproject1-436018-f17454e38948.json"
     
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 8080)), debug=True)
