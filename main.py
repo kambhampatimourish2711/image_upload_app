@@ -1,95 +1,123 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, session
-from google.cloud import storage
 import os
+import base64
 import requests
-from io import BytesIO
-from PIL import Image
-from datetime import timedelta
-from llama_index.multi_modal_llms.gemini import GeminiMultiModal
-from llama_index.core.multi_modal_llms.generic_utils import load_image_urls
+import uuid
+from flask import Flask, render_template, request, redirect, url_for, flash
+from google.cloud import storage
+from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
-app.secret_key = 'supersecretkey'
+app.secret_key = 'supersecretkey'  # Add a secret key for Flash messages
 
-bucket_name = 'my-image-upload-bucket123456'
-API_KEY = 'AIzaSyCQcuwNvtCg5YIVUcAkp-ZcF8ozw7v71gY'
-os.environ["GOOGLE_API_KEY"] = API_KEY
+# Replace with your correct credentials and bucket details
+PROJECT_ID = 'cotproject1-436018'
+BUCKET_NAME = 'my-image-upload-bucket123456'
+GEMINI_API_KEY = 'AIzaSyCQcuwNvtCg5YIVUcAkp-ZcF8ozw7v71gY'
+GEMINI_API_URL = f'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-001:generateContent?key={GEMINI_API_KEY}'
 
+# Initialize Google Cloud Storage client and bucket
 storage_client = storage.Client()
-bucket = storage_client.bucket(bucket_name)
+bucket = storage_client.bucket(BUCKET_NAME)
 
-gemini_pro = GeminiMultiModal(model_name="models/gemini-1.5-flash")
-
-def generate_image_description(image_url):
-    """Generates a description for the image using the Gemini API."""
+def generate_caption_and_description(image_path):
+    """Generate a caption and description for an image using the Gemini API."""
     try:
-        image_documents = load_image_urls([image_url])
-        response = gemini_pro.complete(
-            prompt="Describe the content of the image.",
-            image_documents=image_documents,
-        )
-        description = response.text
-        return description
+        with open(image_path, 'rb') as image_file:
+            image_data = base64.b64encode(image_file.read()).decode('utf-8')
+
+        payload = {
+            "contents": [
+                {
+                    "parts": [
+                        {
+                            "inlineData": {
+                                "mimeType": "image/jpeg",
+                                "data": image_data
+                            }
+                        }
+                    ]
+                }
+            ]
+        }
+
+        headers = {'Content-Type': 'application/json'}
+        response = requests.post(GEMINI_API_URL, headers=headers, json=payload)
+        response.raise_for_status()  # Raise an error for unsuccessful responses
+
+        api_response = response.json()
+        print(f"Gemini API response: {api_response}")
+
+        caption = api_response.get('candidates', [{}])[0].get('content', {}).get('parts', [{}])[0].get('text', 'No caption available')
+        description = "Detailed description not available in response"  # Placeholder if description is not explicit
+
+        return caption, description
     except Exception as e:
-        print(f"Error generating description: {e}")
+        print(f"Error generating caption and description with Gemini API: {e}")
+        return None, None
+
+def generate_signed_url(blob):
+    """Generates a signed URL for accessing the file privately."""
+    try:
+        url = blob.generate_signed_url(
+            version='v4',
+            expiration=3600,  # 1 hour expiration
+            method='GET'
+        )
+        return url
+    except Exception as e:
+        print(f"Error generating signed URL: {e}")
         return None
 
-def save_description_to_bucket(file_name, description):
-    """Saves the description to a text file in the same bucket as the image."""
-    try:
-        text_blob = bucket.blob(file_name + '.txt')
-        text_blob.upload_from_string(description)
-        print(f"Description saved for {file_name}.txt")
-    except Exception as e:
-        print(f"Error saving description to bucket: {e}")
-
-@app.route("/", methods=["GET", "POST"])
-def index():
-    image_url = None
-    description = None
-    uploaded_files = []
-
-    # Retrieve the list of previously uploaded files
-    blobs = bucket.list_blobs()
-    for blob in blobs:
-        uploaded_files.append({
-            "name": blob.name,
-            "url": blob.public_url
-        })
-
-    if request.method == "POST":
-        # Handle file upload
-        if 'file' not in request.files:
-            flash("No file part")
+@app.route('/', methods=['GET', 'POST'])
+def upload_file():
+    if request.method == 'POST':
+        file = request.files.get('file')
+        if not file or file.filename == '':
+            flash("No file selected. Please choose an image.")
             return redirect(request.url)
-        file = request.files['file']
-        if file.filename == '':
-            flash("No selected file")
-            return redirect(request.url)
-        if file:
-            # Upload file to Google Cloud Storage
-            blob = bucket.blob(file.filename)
-            blob.upload_from_file(file)
-            blob.make_public()  # Make the file public (optional)
-            image_url = blob.public_url
 
-            # Generate image description using Gemini API
-            description = generate_image_description(image_url)
-            if description:
-                save_description_to_bucket(file.filename, description)
-                flash(f"File {file.filename} uploaded successfully with description.")
+        # Save file locally for processing
+        filename = secure_filename(file.filename)
+        unique_filename = f"{uuid.uuid4().hex}_{filename}"
+        local_file_path = os.path.join('/tmp', unique_filename)
+        file.save(local_file_path)
+
+        try:
+            # Upload the file to Google Cloud Storage
+            blob = bucket.blob(unique_filename)
+            blob.upload_from_filename(local_file_path, content_type=file.content_type)
+            print(f"Uploaded image to Cloud Storage: {unique_filename}")
+
+            # Generate caption and description
+            caption, description = generate_caption_and_description(local_file_path)
+            if caption:
+                text_content = f"Caption: {caption}\nDescription: {description}"
+                text_blob = bucket.blob(f"{unique_filename}.txt")
+                text_blob.upload_from_string(text_content, content_type='text/plain')
+                print(f"Text file {unique_filename}.txt saved successfully with content:\n{text_content}")
             else:
-                flash("Error generating description.")
+                flash("Caption and description could not be generated.")
 
-    return render_template("index.html", image_url=image_url, description=description, uploaded_files=uploaded_files)
+        except Exception as e:
+            print(f"Error during file upload or caption/description generation: {e}")
+            flash("An error occurred. Please try again.")
+            return redirect(request.url)
 
-@app.route("/clear", methods=["POST"])
-def clear_bucket():
+        return redirect(url_for('upload_file'))
+
+    # Fetch image and description data to display in the gallery
     blobs = bucket.list_blobs()
+    image_data_list = []
+
     for blob in blobs:
-        blob.delete()
-    flash("Bucket cleared successfully.")
-    return redirect(url_for('index'))
+        if not blob.name.endswith('.txt'):
+            # Use signed URL for secure access
+            image_url = generate_signed_url(blob)
+            description_blob = bucket.blob(f"{blob.name}.txt")
+            description = description_blob.download_as_text() if description_blob.exists() else "No description available"
+            image_data_list.append({'image_url': image_url, 'description': description})
+
+    return render_template('index.html', images=image_data_list, bucket_name=BUCKET_NAME)
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8080, debug=True)
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 8080)), debug=True)

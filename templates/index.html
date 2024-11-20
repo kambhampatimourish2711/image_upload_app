@@ -1,56 +1,60 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Image Upload and Description</title>
-    <style>
-        body {
-            background-color: green;
-            color: white;
-        }
-    </style>
+    <title>Image Gallery Upload</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
+
 <body>
-    <h1>Upload an Image</h1>
-
-    <form method="POST" enctype="multipart/form-data">
-        <input type="file" name="file" required>
-        <button type="submit">Upload</button>
-    </form>
-
-    {% with messages = get_flashed_messages() %}
-      {% if messages %}
-        <ul>
-          {% for message in messages %}
-            <li>{{ message }}</li>
-          {% endfor %}
-        </ul>
-      {% endif %}
-    {% endwith %}
-
-    {% if image_url %}
-        <h2>Uploaded Image:</h2>
-        <img src="{{ image_url }}" alt="Uploaded Image" style="max-width: 400px;">
-        <h2>Description:</h2>
-        <p>{{ description }}</p>
-    {% endif %}
-
-    <h2>Your Previously Uploaded Files</h2>
-    {% if uploaded_files %}
-        <ul>
-            {% for file in uploaded_files %}
-                <li>
-                    <a href="{{ file.url }}" target="_blank">{{ file.name }}</a>
-                </li>
+    <div class="container">
+        <h1>Image Gallery Upload</h1>
+        <form method="post" enctype="multipart/form-data">
+            <div class="file-input-wrapper" id="fileInputWrapper">
+                <button type="button" class="btn" id="fileInputBtn">Choose Image</button>
+                <input type="file" name="file" accept="image/*" id="fileInput">
+                <div class="file-name-display" id="fileNameDisplay"></div>
+            </div>
+            <input type="submit" value="Upload" class="submit-btn">
+        </form>
+        <h2>Your Image Gallery</h2>
+        <ul class="image-list">
+            {% for image in images %}
+            <li class="image-item">
+                <img src="{{ image.image_url }}" alt="Image" class="image-thumbnail">
+                <div class="image-description">{{ image.description }}</div>
+            </li>
             {% endfor %}
         </ul>
-    {% else %}
-        <p>You have not uploaded any files yet.</p>
-    {% endif %}
+    </div>
 
-    <form action="/clear" method="POST" style="margin-top: 20px;">
-        <button type="submit">Clear Bucket</button>
-    </form>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const fileInput = document.getElementById('fileInput');
+            const fileInputWrapper = document.getElementById('fileInputWrapper');
+            const fileInputBtn = document.getElementById('fileInputBtn');
+            const fileNameDisplay = document.getElementById('fileNameDisplay');
+
+            fileInputBtn.addEventListener('click', function () {
+                fileInput.click();
+            });
+
+            fileInput.addEventListener('change', function (e) {
+                if (this.files && this.files.length > 0) {
+                    const fileName = this.files[0].name;
+                    fileNameDisplay.textContent = fileName;
+                    fileInputWrapper.classList.add('file-selected');
+                    fileInputBtn.textContent = 'Change Image';
+                } else {
+                    fileNameDisplay.textContent = '';
+                    fileInputWrapper.classList.remove('file-selected');
+                    fileInputBtn.textContent = 'Choose Image';
+                }
+            });
+        });
+    </script>
 </body>
+
 </html>
