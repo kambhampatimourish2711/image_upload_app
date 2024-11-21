@@ -1,7 +1,7 @@
 import os
 import base64
 import requests
-from flask import Flask, render_template, request, redirect, url_for, send_from_directory
+from flask import Flask, render_template, request, redirect, url_for
 from google.cloud import storage
 from werkzeug.utils import secure_filename
 import uuid
@@ -17,10 +17,6 @@ GEMINI_API_URL = f'https://generativelanguage.googleapis.com/v1beta/models/gemin
 # Initialize Google Cloud Storage client and bucket
 storage_client = storage.Client()
 bucket = storage_client.bucket(BUCKET_NAME)
-
-# Ensure the static folder exists for serving files
-STATIC_FOLDER = 'static'
-os.makedirs(STATIC_FOLDER, exist_ok=True)
 
 def generate_caption_and_description(image_path):
     """Generate a caption and description of the image using the Gemini API."""
@@ -102,21 +98,23 @@ def upload_file():
     for blob in blobs:
         if not blob.name.endswith('.txt'):
             try:
+                # Generate signed URL for the image
                 image_url = f"https://storage.googleapis.com/{BUCKET_NAME}/{blob.name}"
                 description_blob = bucket.blob(f"{blob.name}.txt")
-                description = description_blob.download_as_text() if description_blob.exists() else "No description available"
+
+                # Retrieve the description if it exists
+                if description_blob.exists():
+                    description = description_blob.download_as_text()
+                else:
+                    description = "No description available"
+
                 image_data_list.append({'image_url': image_url, 'description': description})
-                print(f"Retrieved image: {blob.name} with URL: {image_url}")
+                print(f"Retrieved image: {blob.name} with URL: {image_url} and description: {description}")
             except Exception as e:
                 print(f"Error retrieving image or description: {e}")
 
     print(f"Total images retrieved: {len(image_data_list)}")
     return render_template('index.html', images=image_data_list, bucket_name=BUCKET_NAME)
-
-@app.route('/static/<path:filename>')
-def serve_static(filename):
-    """Serve static files."""
-    return send_from_directory(STATIC_FOLDER, filename)
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))
