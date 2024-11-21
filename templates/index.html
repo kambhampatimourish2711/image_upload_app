@@ -12,49 +12,20 @@
     <div class="container">
         <h1>Image Gallery Upload</h1>
         <form method="post" enctype="multipart/form-data">
-            <div class="file-input-wrapper" id="fileInputWrapper">
-                <button type="button" class="btn" id="fileInputBtn">Choose Image</button>
-                <input type="file" name="file" accept="image/*" id="fileInput">
-                <div class="file-name-display" id="fileNameDisplay"></div>
-            </div>
-            <input type="submit" value="Upload" class="submit-btn">
+            <label for="fileInput">Choose an Image:</label>
+            <input type="file" name="file" accept="image/*" id="fileInput" required>
+            <input type="submit" value="Upload">
         </form>
         <h2>Your Image Gallery</h2>
-        <ul class="image-list">
+        <ul>
             {% for image in images %}
-            <li class="image-item">
-                <img src="{{ image.image_url }}" alt="Image" class="image-thumbnail">
-                <div class="image-description">{{ image.description }}</div>
+            <li>
+                <img src="{{ image.image_url }}" alt="Image" style="max-width: 200px; max-height: 200px;">
+                <p>{{ image.description }}</p>
             </li>
             {% endfor %}
         </ul>
     </div>
-
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const fileInput = document.getElementById('fileInput');
-            const fileInputWrapper = document.getElementById('fileInputWrapper');
-            const fileInputBtn = document.getElementById('fileInputBtn');
-            const fileNameDisplay = document.getElementById('fileNameDisplay');
-
-            fileInputBtn.addEventListener('click', function () {
-                fileInput.click();
-            });
-
-            fileInput.addEventListener('change', function (e) {
-                if (this.files && this.files.length > 0) {
-                    const fileName = this.files[0].name;
-                    fileNameDisplay.textContent = fileName;
-                    fileInputWrapper.classList.add('file-selected');
-                    fileInputBtn.textContent = 'Change Image';
-                } else {
-                    fileNameDisplay.textContent = '';
-                    fileInputWrapper.classList.remove('file-selected');
-                    fileInputBtn.textContent = 'Choose Image';
-                }
-            });
-        });
-    </script>
 </body>
 
 </html>
